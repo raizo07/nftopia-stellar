@@ -332,6 +332,22 @@ export class MarketplaceSettlementClient {
   }
 
   /**
+   * Fetch contract events emitted since a given ledger sequence.
+   *
+   * TODO(#248): Replace this stub with a real Soroban RPC getEvents call.
+   * Returns { events, latestLedger } where latestLedger is the highest ledger
+   * examined so the caller can advance its cursor even when no events exist.
+   */
+  async getEventsSince(
+    fromLedger: number,
+  ): Promise<{ events: Record<string, unknown>[]; latestLedger: number }> {
+    this.logger.debug(
+      `getEventsSince stub called with fromLedger=${fromLedger}`,
+    );
+    return { events: [], latestLedger: fromLedger };
+  }
+
+  /**
    * Build the Soroban transaction XDR for accepting a direct XLM offer on an NFT.
    * Returns the unsigned transaction XDR for the owner to sign and broadcast.
    */
