@@ -2,15 +2,15 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import ApolloWrapper from "@/lib/graphql/apollo-wrapper";
 import { AuthProvider } from "@/lib/context/AuthContext";
+import dynamic from "next/dynamic";
 
-
-// Client-only TelemetryBootstrapper
-function TelemetryBootstrapper() {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const { useTelemetry } = require("@/hooks/useTelemetry");
-  useTelemetry();
-  return null;
-}
+// ─── SAFE COMPILER SEPARATION ──────────────────────────────────────────
+// Pulling in your isolated TelemetryProvider file with SSR disabled.
+// This completely detaches 'useTelemetry' references from your Server tree.
+const TelemetryProvider = dynamic(
+  () => import("./TelemetryProvider"),
+  { ssr: false }
+);
 
 const inter = Inter({
   subsets: ["latin"],
@@ -85,7 +85,9 @@ export default function RootLayout({
         <meta name="msapplication-config" content="/browserconfig.xml" />
       </head>
       <body className={inter.className}>
-        <TelemetryBootstrapper />
+        {/* Mounted safely at the top of the body tree */}
+        <TelemetryProvider />
+        
         <AuthProvider>
           <ApolloWrapper>{children}</ApolloWrapper>
         </AuthProvider>
