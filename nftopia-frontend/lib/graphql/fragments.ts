@@ -63,3 +63,19 @@ export const AUCTION_FIELDS_FRAGMENT = gql`
     updatedAt
   }
 `;
+
+export const TRANSFER_EVENT_FIELDS_FRAGMENT = gql`
+  fragment TransferEventFields on TransferEvent {
+    id
+    fromAddress
+    toAddress
+    transactionHash
+    eventType
+    price
+    currency
+    timestamp
+    fromAddressTruncated
+    toAddressTruncated
+    blockExplorerUrl
+  }
+`;
