@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Clock, ChevronRight, ChevronLeft } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 
+
+
 type AuctionItem = {
   id: string;
   name: string;
