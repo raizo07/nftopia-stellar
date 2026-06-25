@@ -647,7 +647,8 @@ impl AuctionEngine {
         // Must meet minimum increment
         if auction.highest_bid > 0 {
             // Calculate minimum increment using config.min_bid_increment_bps
-            let min_increment = (auction.highest_bid * config.min_bid_increment_bps as i128) / 10000;
+            let min_increment =
+                (auction.highest_bid * config.min_bid_increment_bps as i128) / 10000;
             let min_required_bid = auction.highest_bid + min_increment;
 
             if bid_amount < min_required_bid {

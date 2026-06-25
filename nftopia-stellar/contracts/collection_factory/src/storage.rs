@@ -12,6 +12,7 @@ pub enum DataKey {
 
     // Collection Keys
     CollectionConfig,
+    FactoryAddress,
     TotalSupply,
     TokenMetadata(u32),
     Balance(Address, u32),

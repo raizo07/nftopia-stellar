@@ -10,6 +10,14 @@ pub struct Created {
 
 #[contractevent]
 #[derive(Clone, Debug)]
+pub struct CollectionRegistered {
+    pub factory: Address,
+    pub collection: Address,
+    pub registered_at: u64,
+}
+
+#[contractevent]
+#[derive(Clone, Debug)]
 pub struct Mint {
     pub collection: Address,
     pub to: Address,
@@ -46,6 +54,15 @@ pub fn emit_collection_created(
         creator,
         collection: collection_address,
         id: collection_id,
+    }
+    .publish(env);
+}
+
+pub fn emit_collection_registered(env: &Env, factory: Address, collection: Address) {
+    CollectionRegistered {
+        factory,
+        collection,
+        registered_at: env.ledger().timestamp(),
     }
     .publish(env);
 }

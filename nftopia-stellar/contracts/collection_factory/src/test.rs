@@ -54,7 +54,7 @@ fn test_collection_logic() {
         royalty_recipient: admin.clone(),
     };
 
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
 
     // Mint NFT
     let token_id = 1;
@@ -113,7 +113,7 @@ fn test_unauthorized_mint() {
         royalty_recipient: admin.clone(),
     };
 
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
 
     // Try to mint from non-minter address
     // collection_client.mint(&user, &1, &String::from_str(&env, "uri"), &Vec::new(&env));
@@ -149,7 +149,7 @@ fn test_batch_minting() {
         royalty_recipient: admin.clone(),
     };
 
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
 
     // Mint multiple tokens to user1 and user2
 
@@ -206,7 +206,7 @@ fn test_burn_authorized() {
         royalty_recipient: admin.clone(),
     };
 
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
 
     // Mint a token to user1
     let token_id = 1u32;
@@ -260,7 +260,7 @@ fn test_access_control_roles() {
         royalty_percentage: 100,
         royalty_recipient: admin.clone(),
     };
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
 
     // Only admin is minter by default
     let token_id = 1u32;
@@ -306,7 +306,7 @@ fn test_event_emissions_happy() {
         royalty_percentage: 100,
         royalty_recipient: admin.clone(),
     };
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
     let token_id = 1u32;
     let uri = String::from_str(&env, "ipfs://event1");
     let attributes = Vec::new(&env);
@@ -357,7 +357,7 @@ fn test_storage_state_happy() {
         royalty_percentage: 100,
         royalty_recipient: admin.clone(),
     };
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
     // Before mint
     assert_eq!(collection_client.total_supply(), 0);
     let token_id = 1u32;
@@ -404,7 +404,7 @@ fn test_invalid_params_empty_name() {
         royalty_recipient: admin.clone(),
     };
     // Should panic
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
 }
 
 #[test]
@@ -429,7 +429,7 @@ fn test_invalid_params_excessive_royalty() {
         royalty_recipient: admin.clone(),
     };
     // Should panic
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
 }
 
 #[test]
@@ -454,7 +454,7 @@ fn test_invalid_params_zero_max_supply() {
         royalty_recipient: admin.clone(),
     };
     // Should panic
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
 }
 
 #[test]
@@ -476,7 +476,7 @@ fn test_unauthorized_non_admin_mint() {
         royalty_percentage: 100,
         royalty_recipient: admin.clone(),
     };
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
     let token_id = 1u32;
     let uri = String::from_str(&env, "ipfs://nonadmin1");
     let attributes = Vec::new(&env);
@@ -504,7 +504,7 @@ fn test_unauthorized_non_owner_burn() {
         royalty_percentage: 100,
         royalty_recipient: admin.clone(),
     };
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
     let token_id = 1u32;
     let uri = String::from_str(&env, "ipfs://nonowner1");
     let attributes = Vec::new(&env);
@@ -546,7 +546,7 @@ fn test_mint_beyond_max_supply() {
         royalty_percentage: 100,
         royalty_recipient: admin.clone(),
     };
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
     let token_id = 1u32;
     let uri = String::from_str(&env, "ipfs://max1");
     let attributes = Vec::new(&env);
@@ -575,7 +575,7 @@ fn test_transfer_nonexistent_token() {
         royalty_percentage: 100,
         royalty_recipient: admin.clone(),
     };
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
     // Should panic
     collection_client.transfer(&user1, &user2, &42u32);
 }
@@ -599,7 +599,7 @@ fn test_duplicate_operations() {
         royalty_percentage: 100,
         royalty_recipient: admin.clone(),
     };
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
     let token_id = 1u32;
     let uri = String::from_str(&env, "ipfs://dup1");
     let attributes = Vec::new(&env);
@@ -647,7 +647,7 @@ fn test_edge_unicode_metadata() {
         royalty_percentage: 100,
         royalty_recipient: admin.clone(),
     };
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
     let token_id = 1u32;
     let uri = String::from_str(&env, "ipfs://ユニコード");
     let attributes = Vec::new(&env);
@@ -676,10 +676,145 @@ fn test_edge_boundary_values() {
         royalty_percentage: 10000,
         royalty_recipient: admin.clone(),
     };
-    collection_client.init(&admin, &config);
+    collection_client.init(&admin, admin.clone(), &config);
     let token_id = 1u32;
     let uri = String::from_str(&env, "ipfs://boundary1");
     let attributes = Vec::new(&env);
     collection_client.mint(&admin, &user, &token_id, &uri, &attributes);
     assert_eq!(collection_client.owner_of(&token_id), Some(user.clone()));
+}
+
+#[test]
+fn test_factory_ownership_validation() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::from_string(&String::from_str(
+        &env,
+        "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+    ));
+    let factory_id = env.register(CollectionFactory, ());
+    let factory_client = CollectionFactoryClient::new(&env, &factory_id);
+    factory_client.initialize(&admin);
+
+    // Create a collection through the factory
+    let creator = Address::generate(&env);
+    let config = CollectionConfig {
+        name: String::from_str(&env, "Factory NFT"),
+        symbol: String::from_str(&env, "FNFT"),
+        description: String::from_str(&env, "Factory Test"),
+        base_uri: String::from_str(&env, "https://factory.com/"),
+        max_supply: Some(1),
+        is_public_mint: true,
+        royalty_percentage: 100,
+        royalty_recipient: admin.clone(),
+    };
+
+    // For this test, we need to deploy the collection wasm
+    // Since we don't have the actual wasm, we'll test the collection functions directly
+    let collection_id = env.register(NftCollection, ());
+    let collection_client = NftCollectionClient::new(&env, &collection_id);
+
+    collection_client.init(&admin, factory_id.clone(), &config);
+
+    // Test get_factory returns the factory address
+    assert_eq!(collection_client.get_factory(), Some(factory_id.clone()));
+
+    // Test is_from_factory returns true for the correct factory
+    assert!(collection_client.is_from_factory(factory_id.clone()));
+
+    // Test is_from_factory returns false for a different address
+    let fake_factory = Address::generate(&env);
+    assert!(!collection_client.is_from_factory(fake_factory));
+}
+
+#[test]
+fn test_factory_verify_origin() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::from_string(&String::from_str(
+        &env,
+        "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+    ));
+    let factory_id = env.register(CollectionFactory, ());
+    let factory_client = CollectionFactoryClient::new(&env, &factory_id);
+    factory_client.initialize(&admin);
+
+    let collection_id = env.register(NftCollection, ());
+    let collection_client = NftCollectionClient::new(&env, &collection_id);
+
+    let config = CollectionConfig {
+        name: String::from_str(&env, "Origin NFT"),
+        symbol: String::from_str(&env, "ONFT"),
+        description: String::from_str(&env, "Origin Test"),
+        base_uri: String::from_str(&env, "https://origin.com/"),
+        max_supply: Some(1),
+        is_public_mint: true,
+        royalty_percentage: 100,
+        royalty_recipient: admin.clone(),
+    };
+
+    collection_client.init(&admin, factory_id.clone(), &config);
+
+    // Test verify_factory_origin from factory
+    assert!(factory_client.verify_factory_origin(collection_id.clone()));
+
+    // Test with different factory address (should fail)
+    let fake_factory_id = env.register(CollectionFactory, ());
+    let fake_factory_client = CollectionFactoryClient::new(&env, &fake_factory_id);
+    fake_factory_client.initialize(&admin);
+    assert!(!fake_factory_client.verify_factory_origin(collection_id.clone()));
+}
+
+#[test]
+fn test_get_collections_by_factory() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::from_string(&String::from_str(
+        &env,
+        "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+    ));
+    let factory_id = env.register(CollectionFactory, ());
+    let factory_client = CollectionFactoryClient::new(&env, &factory_id);
+    factory_client.initialize(&admin);
+
+    let collection_id1 = env.register(NftCollection, ());
+    let collection_client1 = NftCollectionClient::new(&env, &collection_id1);
+
+    let config1 = CollectionConfig {
+        name: String::from_str(&env, "Collection1"),
+        symbol: String::from_str(&env, "COL1"),
+        description: String::from_str(&env, "Test 1"),
+        base_uri: String::from_str(&env, "https://test1.com/"),
+        max_supply: Some(1),
+        is_public_mint: true,
+        royalty_percentage: 100,
+        royalty_recipient: admin.clone(),
+    };
+
+    collection_client1.init(&admin, factory_id.clone(), &config1);
+
+    let collection_id2 = env.register(NftCollection, ());
+    let collection_client2 = NftCollectionClient::new(&env, &collection_id2);
+
+    let config2 = CollectionConfig {
+        name: String::from_str(&env, "Collection2"),
+        symbol: String::from_str(&env, "COL2"),
+        description: String::from_str(&env, "Test 2"),
+        base_uri: String::from_str(&env, "https://test2.com/"),
+        max_supply: Some(1),
+        is_public_mint: true,
+        royalty_percentage: 100,
+        royalty_recipient: admin.clone(),
+    };
+
+    collection_client2.init(&admin, factory_id.clone(), &config2);
+
+    // Note: get_collections_by_factory returns collections deployed by the factory
+    // Since we're not using the actual create_collection flow, this test is limited
+    // In a real scenario, collections would be deployed via factory.create_collection
+    let collections = factory_client.get_collections_by_factory();
+    assert_eq!(collections.len(), 0); // No collections deployed through factory in this test
 }

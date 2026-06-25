@@ -53,7 +53,12 @@ impl CollectionFactory {
         env.invoke_contract::<()>(
             &collection_address,
             &soroban_sdk::symbol_short!("init"),
-            soroban_sdk::vec![&env, admin.into_val(&env), env.current_contract_address().into_val(&env), config.clone().into_val(&env)],
+            soroban_sdk::vec![
+                &env,
+                admin.into_val(&env),
+                env.current_contract_address().into_val(&env),
+                config.clone().into_val(&env)
+            ],
         );
 
         let info = CollectionInfo {
@@ -76,7 +81,11 @@ impl CollectionFactory {
             .set(&DataKey::CollectionCount, &(collection_id + 1));
 
         events::emit_collection_created(&env, creator, collection_address.clone(), collection_id);
-        events::emit_collection_registered(&env, env.current_contract_address(), collection_address.clone());
+        events::emit_collection_registered(
+            &env,
+            env.current_contract_address(),
+            collection_address.clone(),
+        );
 
         Ok(collection_address)
     }
@@ -86,22 +95,26 @@ impl CollectionFactory {
         // by calling is_from_factory on the collection
         let result: bool = env.invoke_contract::<bool>(
             &collection,
-            &soroban_sdk::symbol_short!("is_from_factory"),
+            &soroban_sdk::symbol_short!("is_fact"),
             soroban_sdk::vec![&env, env.current_contract_address().into_val(&env)],
         );
         result
     }
 
     pub fn get_collections_by_factory(env: Env) -> Vec<Address> {
-        let count = env.storage().instance().get(&DataKey::CollectionCount).unwrap_or(0);
+        let count = env
+            .storage()
+            .instance()
+            .get(&DataKey::CollectionCount)
+            .unwrap_or(0);
         let mut collections = Vec::new(&env);
-        
+
         for i in 0..count {
             if let Some(address) = env.storage().instance().get(&DataKey::CollectionAddress(i)) {
                 collections.push_back(address);
             }
         }
-        
+
         collections
     }
 

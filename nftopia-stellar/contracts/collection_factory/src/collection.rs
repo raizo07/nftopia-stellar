@@ -28,7 +28,9 @@ impl NftCollection {
             panic_with_error!(&env, ContractError::InvalidRoyalty);
         }
         env.storage().instance().set(&DataKey::FactoryAdmin, &admin);
-        env.storage().instance().set(&DataKey::FactoryAddress, &factory_address);
+        env.storage()
+            .instance()
+            .set(&DataKey::FactoryAddress, &factory_address);
         env.storage()
             .instance()
             .set(&DataKey::CollectionConfig, &config);
@@ -306,8 +308,12 @@ impl NftCollection {
         env.storage().instance().get(&DataKey::FactoryAddress)
     }
 
-    pub fn is_from_factory(env: Env, factory: Address) -> bool {
-        match env.storage().instance().get(&DataKey::FactoryAddress) {
+    pub fn is_factory(env: Env, factory: Address) -> bool {
+        match env
+            .storage()
+            .instance()
+            .get::<DataKey, Address>(&DataKey::FactoryAddress)
+        {
             Some(stored_factory) => stored_factory == factory,
             None => false,
         }

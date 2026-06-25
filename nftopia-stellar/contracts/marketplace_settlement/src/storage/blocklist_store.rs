@@ -76,7 +76,9 @@ impl BlocklistStore {
         };
 
         blocked_addresses.set(address.clone(), record);
-        env.storage().instance().set(&BLOCKED_ADDRESSES, &blocked_addresses);
+        env.storage()
+            .instance()
+            .set(&BLOCKED_ADDRESSES, &blocked_addresses);
 
         Ok(())
     }
@@ -90,7 +92,9 @@ impl BlocklistStore {
             .unwrap_or(Map::new(env));
 
         blocked_addresses.remove(address.clone());
-        env.storage().instance().set(&BLOCKED_ADDRESSES, &blocked_addresses);
+        env.storage()
+            .instance()
+            .set(&BLOCKED_ADDRESSES, &blocked_addresses);
     }
 
     /// Get block record for an address
@@ -130,7 +134,9 @@ impl BlocklistStore {
             record.reason = new_reason;
             record.expires_at = new_expires_at;
             blocked_addresses.set(address.clone(), record);
-            env.storage().instance().set(&BLOCKED_ADDRESSES, &blocked_addresses);
+            env.storage()
+                .instance()
+                .set(&BLOCKED_ADDRESSES, &blocked_addresses);
             Ok(())
         } else {
             Err(SettlementError::NotFound)

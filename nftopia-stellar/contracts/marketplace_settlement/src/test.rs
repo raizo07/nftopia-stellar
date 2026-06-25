@@ -753,3 +753,131 @@ fn test_rate_limiter_admin_update_config() {
         panic!("Expected Err(Ok(CooldownActive)), got: {:?}", res);
     }
 }
+
+#[test]
+fn test_minimum_bid_increment_enforcement() {
+    let (env, cid, client, admin) = new_env();
+    let asset = mk_asset(&env);
+    let seller = Address::generate(&env);
+    let bidder = Address::generate(&env);
+    let nft = env.register(MockNft, ());
+    let creator = Address::generate(&env);
+    reg(&env, &cid, &nft, &creator, &admin, &asset);
+    MockNftClient::new(&env, &nft).set_owner(&seller);
+
+    // Create auction with 100 starting price and 1% bid increment (100 bps)
+    let auction_id = client.create_auction(
+        &seller,
+        &nft,
+        &1u64,
+        &100_000i128,
+        &80_000i128,
+        &3600u64,
+        &1_000i128, // 1% of starting price
+        &AuctionType::English,
+        &asset,
+    );
+
+    // First bid at starting price should succeed
+    client.place_bid(&auction_id, &bidder, &100_000i128, &None);
+
+    // Second bid with only 0.5% increment should fail (below 1% minimum)
+    let res = client.try_place_bid(&auction_id, &bidder, &100_500i128, &None);
+    if let Err(Ok(invoke_error)) = res {
+        let actual_error: SettlementError = invoke_error;
+        assert_eq!(actual_error, SettlementError::BidBelowMinimumIncrement);
+    } else {
+        panic!("Expected Err(Ok(BidBelowMinimumIncrement)), got: {:?}", res);
+    }
+
+    // Bid with 1% increment should succeed
+    client.place_bid(&auction_id, &bidder, &101_000i128, &None);
+}
+
+#[test]
+fn test_auction_bid_increment_validation_on_creation() {
+    let (env, cid, client, admin) = new_env();
+    let asset = mk_asset(&env);
+    let seller = Address::generate(&env);
+    let nft = env.register(MockNft, ());
+    let creator = Address::generate(&env);
+    reg(&env, &cid, &nft, &creator, &admin, &asset);
+    MockNftClient::new(&env, &nft).set_owner(&seller);
+
+    // Try to create auction with bid_increment below minimum (0.5% instead of 1%)
+    let res = client.try_create_auction(
+        &seller,
+        &nft,
+        &1u64,
+        &100_000i128,
+        &80_000i128,
+        &3600u64,
+        &500i128, // 0.5% of starting price - should fail
+        &AuctionType::English,
+        &asset,
+    );
+
+    if let Err(Ok(invoke_error)) = res {
+        let actual_error: SettlementError = invoke_error;
+        assert_eq!(actual_error, SettlementError::InvalidBidIncrement);
+    } else {
+        panic!("Expected Err(Ok(InvalidBidIncrement)), got: {:?}", res);
+    }
+
+    // Create auction with valid bid_increment (1%)
+    let auction_id = client.create_auction(
+        &seller,
+        &nft,
+        &1u64,
+        &100_000i128,
+        &80_000i128,
+        &3600u64,
+        &1_000i128, // 1% of starting price - should succeed
+        &AuctionType::English,
+        &asset,
+    );
+    assert!(auction_id > 0);
+}
+
+#[test]
+fn test_admin_update_min_bid_increment() {
+    let (env, cid, client, admin) = new_env();
+    let asset = mk_asset(&env);
+    let seller = Address::generate(&env);
+    let bidder = Address::generate(&env);
+    let nft = env.register(MockNft, ());
+    let creator = Address::generate(&env);
+    reg(&env, &cid, &nft, &creator, &admin, &asset);
+    MockNftClient::new(&env, &nft).set_owner(&seller);
+
+    // Update minimum bid increment to 2% (200 bps)
+    client.update_min_bid_increment(&200u64, &admin);
+
+    // Create auction with 2% bid increment
+    let auction_id = client.create_auction(
+        &seller,
+        &nft,
+        &1u64,
+        &100_000i128,
+        &80_000i128,
+        &3600u64,
+        &2_000i128, // 2% of starting price
+        &AuctionType::English,
+        &asset,
+    );
+
+    // First bid at starting price
+    client.place_bid(&auction_id, &bidder, &100_000i128, &None);
+
+    // Bid with 1% increment should fail (below new 2% minimum)
+    let res = client.try_place_bid(&auction_id, &bidder, &101_000i128, &None);
+    if let Err(Ok(invoke_error)) = res {
+        let actual_error: SettlementError = invoke_error;
+        assert_eq!(actual_error, SettlementError::BidBelowMinimumIncrement);
+    } else {
+        panic!("Expected Err(Ok(BidBelowMinimumIncrement)), got: {:?}", res);
+    }
+
+    // Bid with 2% increment should succeed
+    client.place_bid(&auction_id, &bidder, &102_000i128, &None);
+}
