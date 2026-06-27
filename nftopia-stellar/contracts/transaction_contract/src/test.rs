@@ -165,15 +165,18 @@ fn gas_optimizer_applies_safety_margin_and_caching() {
 
     let base = crate::utils::gas_calculator::total_gas(&ops);
 
-    // Default config without safety buffer or caching
-    let config_default = crate::types::default_gas_config(&env);
-    let est_default = crate::gas_optimizer::estimate_with_config(&env, &ops, &config_default);
-    assert_eq!(est_default.estimated_gas, base.estimated_gas);
+    // Base config without safety buffer multiplier scaling
+    let config_base = GasOptimizationConfig {
+        fallback_gas_multiplier_bps: 10_000,
+        ..crate::types::default_gas_config(&env)
+    };
+    let est_base = crate::gas_optimizer::estimate_with_config(&env, &ops, &config_base);
+    assert_eq!(est_base.estimated_gas, base.estimated_gas);
 
     // Config with safety buffer (12000 bps = 1.2x)
     let config_safety = GasOptimizationConfig {
         fallback_gas_multiplier_bps: 12_000,
-        ..config_default.clone()
+        ..config_base.clone()
     };
     let est_safety = crate::gas_optimizer::estimate_with_config(&env, &ops, &config_safety);
     assert!(est_safety.estimated_gas > base.estimated_gas);
@@ -181,7 +184,7 @@ fn gas_optimizer_applies_safety_margin_and_caching() {
     // Config with caching enabled
     let config_cache = GasOptimizationConfig {
         enable_caching: true,
-        ..config_default
+        ..config_base
     };
     let est_cache = crate::gas_optimizer::estimate_with_config(&env, &ops, &config_cache);
     assert!(est_cache.estimated_gas < base.estimated_gas);
